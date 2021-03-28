@@ -40,5 +40,6 @@ func main() {
 
 	//service.GetByNo(client)
 	//service.GetAll(client)
-	service.UploadAvatar(client)
+	//service.UploadAvatar(client)
+	service.SaveAll(client)
 }

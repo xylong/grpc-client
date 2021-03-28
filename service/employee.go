@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"google.golang.org/grpc/metadata"
+	"grpc-client/data"
 	"grpc-client/pb"
 	"io"
 	"log"
@@ -83,4 +84,38 @@ func UploadAvatar(client pb.EmployeeServiceClient) {
 		log.Fatalln(err.Error())
 	}
 	fmt.Println(res.Ok)
+}
+
+// SaveAll
+// 双向streaming
+func SaveAll(client pb.EmployeeServiceClient) {
+	stream, err := client.SaveAll(context.Background())
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	done := make(chan struct{})
+	// 接收
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				done <- struct{}{}
+				break
+			}
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+			fmt.Println(res.Employee)
+		}
+	}()
+
+	for _, e := range data.Employees {
+		if err := stream.Send(&pb.EmployeeRequest{Employee: &e}); err != nil {
+			log.Fatalln(err.Error())
+		}
+	}
+
+	_ = stream.CloseSend()
+	<-done
 }
